@@ -1,0 +1,189 @@
+- name: Install Prometheus
+  hosts: prometheus
+  become_user: root
+  become: yes
+
+  vars:
+      prometheus_user: prometheus
+      prometheus_group: prometheus
+      prometheus_install_path: /opt/prometheus
+      prometheus_config_path: /etc/prometheus
+      prometheus_log_path: /var/log/prometheus
+      prometheus_pid_path: /var/run/prometheus
+      prometheus_download_link: https://github.com/prometheus/prometheus/releases/download/v2.2.1/prometheus-2.2.1.linux-amd64.tar.gz
+      prometheus_filename: prometheus-2.2.1.linux-amd64.tar.gz
+      node_download_link: https://github.com/prometheus/node_exporter/releases/download/v0.16.0/node_exporter-0.16.0.linux-amd64.tar.gz
+      node_filename: node_exporter-0.16.0.linux-amd64.tar.gz
+      node_install_path:   /opt/node
+
+  tasks:
+    # - name: download prometheus
+    #   shell: mkdir "{{ prometheus_install_path }}"
+    #   get_url:
+    #     url: "{{ prometheus_download_link }}"
+    #     dest: "{{ prometheus_install_path }}/{{ prometheus_filename }}"
+    - name: Creates directory
+      file:
+        path: /opt/node
+        state: directory
+
+    - name: install node-exporter
+      unarchive:
+        src: "{{ node_download_link }}"
+        dest: "{{ node_install_path }}"
+        copy: no  
+        validate_certs: False
+
+    - name: create node_exporter system group
+      group:
+        name: node_exporter
+        system: true
+        state: present
+
+    - name: create node_exporter system user
+      user:
+        name: node_exporter
+        system: true
+        shell: "/sbin/nologin"
+        group: node_exporter
+        createhome: false
+        state: present
+
+    - name: add node exporter init service
+      copy:
+        src: node_exporter.service
+        dest: /etc/systemd/system/node_exporter.service
+
+    - name: reload system
+      command: systemctl daemon-reload
+
+    - name: enabled service nod_exporter
+      command: systemctl enable node_exporter
+
+    - name: enabled service nod_exporter
+      command: systemctl start node_exporter
+
+    # ************************************************************************
+
+    # ************************************************************************
+
+    - name: Creates directory
+      file:
+        path: /opt/prometheus
+        state: directory
+
+    - name: install prometheus
+      unarchive: 
+        src: "{{ prometheus_download_link }}"
+        dest: "{{ prometheus_install_path }}"
+        copy: no
+        validate_certs: False
+         
+
+    - name: create prometheus system group
+      group:
+        name: prometheus
+        system: true
+        state: present
+
+    - name: create prometheus system user
+      user:
+        name: prometheus
+        system: true
+        shell: "/sbin/nologin"
+        group: prometheus
+        createhome: false
+        state: present
+
+    # - name: chown prometheus
+    #   command: chown prometheus:prometheus /opt/prometheus/prometheus-2.5.0.linux-amd64/ -R
+
+    # - file:
+    #     path: /opt/prometheus/
+    #     owner: prometheus
+    #     group: prometheus
+    #     mode: 0777
+
+    - file: dest=/opt/prometheus/ owner=prometheus group=prometheus mode=u=rwX,g=rX,o=rX recurse=yes
+
+    # - name: download node
+    #   shell: mkdir "{{ node_install_path }}"
+    #   get_url:
+    #     url: "{{ node_download_link }}"
+    #     dest: "{{ node_install_path }}"
+
+    
+    # - name: create user prometheus
+    #   shell: useradd --no-create-home --shell /bin/false prometheus
+
+    # - name: create user node_exporter
+    #   shell: useradd --no-create-home --shell /bin/false node_exporter
+
+
+
+
+
+    # - name: copy file nod_exporter to /usr/sbin/
+    #   copy:
+    #     src: /opt/node/node_exporter-0.16.0.linux-amd64/node_exporter
+    #     dest: /usr/sbin/node_exporter
+
+    # - name: add node exporter 
+    #   copy:
+    #     src: node_exporter
+    #     dest: /etc/sysconfig/node_exporter
+    #     remote_src: yes
+
+        #   notify:
+    #     - enable node exporter on boot
+
+    # - name: Make sure a service  node_exporter  is running
+    #   systemd: state=started name=node_exporter
+
+    # - name: restart service cron on centos, in all cases, also issue daemon-reload to pick up config changes
+    #   systemd:
+    #     state: restarted
+    #     daemon_reload: yes
+    #     name: crond
+
+
+
+    # - name: Make sure a service  node_exporter  is running
+    #   service:  
+    #     name: node_exporter
+    #     state: started
+
+    - name: config prometheus
+      copy:
+        src: prometheus.yml
+        dest: /opt/prometheus/prometheus-2.2.1.linux-amd64/prometheus.yml
+
+    - name: add prometheus init service
+      copy:
+        src: prometheus.service
+        dest:  /etc/systemd/system/prometheus.service
+    #   notify: 
+    #     - enable node exporter on boot
+
+    # - name: Make sure a service  prometheus  is running
+    #   systemd: state=started name=prometheus
+    - firewalld:
+        port: 9090/tcp
+        permanent: yes
+        state: disabled
+
+    - name: reload system
+      command: systemctl daemon-reload
+
+    - name: enabled service prometheus
+      command: systemctl enable prometheus
+      
+    - name: start service prometheus
+      command: systemctl start prometheus
+
+
+
+    # - name: Make sure a service  prometheus  is running
+    #   service: 
+    #     name: prometheus
+    #     state: started 

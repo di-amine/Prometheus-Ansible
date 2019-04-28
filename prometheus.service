@@ -1,0 +1,14 @@
+[Unit]
+Description=Prometheus
+Documentation=https://prometheus.io/docs/introduction/overview/
+After=network-online.target
+
+[Service]
+User=prometheus
+Restart=on-failure
+ExecStart=/opt/Prometheus/prometheus-2.2.1.linux-amd64/prometheus \
+    -config.file /opt/prometheus/prometheus-2.2.1.linux-amd64/prometheus.yml \
+    -storage.local.path /opt/Prometheus/prometheus-2.2.1.linux-amd64/data
+
+[Install]
+WantedBy=multi-user.target
