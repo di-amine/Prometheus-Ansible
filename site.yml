@@ -1,9 +1,0 @@
----
-- name: Install Apache
-  import_playbook: InstallApachePlaybook.yml
-
-- name: Install Mariadb
-  import_playbook: InstallMriadbPlaybook.yml
-
-- name: Install tomcat
-  import_playbook: InstallTomcatPlaybook.yml
